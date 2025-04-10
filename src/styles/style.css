@@ -1,3 +1,175 @@
+/* 1) RESET & BASE STYLES */
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: sans-serif;
+  -ms-overflow-style: none; /* IE Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Body takes full height, flex column for header -> main -> footer */
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f4f5f7; /* A light gray to complement #0079BF board background */
+}
+
+/* 2) NAVBAR & FOOTER */
+
+.bg-dark, 
+.footer {
+  background-color: #0067A3 !important; /* Rich blue color */
+  color: #fff;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  font-weight: 100;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 16px;
+  gap: 24px; /* space between Active tasks and Finished tasks, etc. */
+  z-index: 10; /* ensure footer is on top if there's overflow */
+}
+
+/* 3) BOARD WRAPPER */
+
+.board {
+  flex: 1;           /* grow to fill space above the footer */
+  width: 100%;
+  background-color: #0079BF; /* Trello-like blue background */
+  padding: 24px;     /* spacing around the columns */
+  overflow-y: auto;  /* scroll if board is too tall */
+}
+
+/* 4) LANE WRAPPER (all columns together) */
+
+.lanes {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  /* we can remove height:100% since we rely on .board for overall height */
+}
+
+/* 5) EACH COLUMN (“swim-lanes”) */
+
+.swim-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  background: #EBECF0;      /* Light gray-ish column background */
+  border-radius: 8px;
+  width: 272px;             /* Trello-like width for each column */
+  min-height: 40px;         /* ensures some visible space even if empty */
+  padding: 12px;
+  flex-shrink: 0;           /* columns won’t shrink if container is too small */
+}
+
+.heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: #172B4D; /* a dark text color often used in Trello-like UIs */
+  margin-bottom: 4px;
+}
+
+/* 6) TASK CARDS */
+
+.task {
+  background: white;
+  color: #172B4D;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: move;
+
+  /* subtle box-shadow to appear like a card */
+  box-shadow: 0 1px 1px rgba(9,30,66,0.25);
+  transition: background-color 0.1s ease;
+}
+
+/* Hover effect for task */
+.task:hover {
+  background-color: #fafafa;
+}
+
+/* 7) FOR DRAGGING STATES (if you implement drag & drop) */
+
+.is-dragging {
+  transform: scale(1.03);
+  background: #0067A3;
+  color: white;
+  box-shadow: 0 4px 8px rgba(9,30,66,0.25);
+}
+
+/* 8) LOGIN BUTTON WIDTH */
+
 #app-login-btn {
   width: 160px;
+}
+
+/* 9) “READY-FORM” (If you keep it) */
+
+#ready-form {
+  padding: 32px;
+}
+#ready-form input {
+  background: #EBECF0;
+  padding: 5px;
+  margin-right: 12px;
+  border-radius: 8px;
+  border-style: none;
+  font-size: 14px;
+  outline: #0067A3;
+}
+#ready-form button {
+  padding: 3px 10px;
+  border-radius: 8px;
+  border-style: none;
+  font-weight: 300;
+  color: #5E6C84;
+  cursor: pointer;
+}
+
+/* 10) DROPDOWNS (For moving tasks from one column to next) */
+
+.dropdown-content {
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  margin-top: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  padding: 8px 0;
+  border-radius: 4px;
+  z-index: 5;
+
+  display: none;  /* hidden by default */
+}
+
+/* Each dropdown item style */
+.dropdown-content li {
+  list-style: none;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #172B4D;
+  cursor: pointer;
+}
+.dropdown-content li:hover {
+  background-color: #E4E4E4;
+}
+
+/* The “.show” class toggles display to block */
+.show {
+  display: block;
 }
