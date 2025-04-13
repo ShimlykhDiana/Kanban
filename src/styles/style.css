@@ -1,125 +1,119 @@
-/* 1) RESET & BASE STYLES */
-
-* {
-  padding: 0;
+/* 1) FULL-HEIGHT BODY, FLEX LAYOUT */
+html, body {
+  height: 100%;
   margin: 0;
+  padding: 0;
   box-sizing: border-box;
   font-family: sans-serif;
-  -ms-overflow-style: none; /* IE Edge */
-  scrollbar-width: none;     /* Firefox */
 }
-*::-webkit-scrollbar {
-  display: none;
-}
-
-.container.app-main-container {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-} 
-
-/* Body takes full height, flex column for header -> main -> footer */
-
 
 body {
-  background-color: #0079c0 !important; /* same shade as slowsleep */
-  margin: 0;
-  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-color: #0079c0; /* main blue background */
 }
 
 /* 2) NAVBAR & FOOTER */
-
-.bg-dark, 
-.footer {
-  background-color: #0067A3 !important; /* Rich blue color */
+.bg-dark, .app-navbar {
+  background-color: #0067A3 !important;
   color: #fff;
 }
 
+/* Single pinned footer (no duplicates) */
 .footer {
-  position: fixed;
-  bottom: 0;
   width: 100%;
-  font-weight: 100;
-  font-size: 16px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  background-color: #0167a4;
+  color: #fff;
   padding: 8px 16px;
-  gap: 24px; /* space between Active tasks and Finished tasks, etc. */
-  z-index: 10; /* ensure footer is on top if there's overflow */
+  box-sizing: border-box;
+}
+.app-footer-active,
+.app-footer-finished {
+  margin-right: 24px;
+  font-size: 14px;
+}
+.app-footer-credit {
+  margin-left: auto;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 14px;
 }
 
-/* 3) BOARD WRAPPER */
+/* 3) MAIN CONTAINER => grows to fill leftover vertical space */
+.container.app-main-container {
+  flex: 1; /* expand vertically, pushing footer down */
+  display: flex;
+  justify-content: flex-start; /* left aligned horizontally */
+  align-items: flex-start;     /* top aligned within container */
+  padding: 16px;
+  background-color: transparent !important;
+}
+#app-content {
+  width: auto;
+}
 
+/* 4) MAKE LOGIN FORM SMALLER */
+.small-input {
+  width: 90px;       /* narrower input fields */
+  font-size: 14px;
+  margin-right: 4px; /* slight spacing between fields */
+  padding: 2px 6px;  /* less padding for smaller look */
+}
+.small-btn {
+  font-size: 14px;
+  padding: 2px 6px;
+  margin-left: 4px;
+}
 
+/* 5) BOARD LAYOUT => .app-blocks-status is container for columns */
+.app-blocks-status {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 24px; /* space below the board if needed */
+}
 
-/* The tasks container inside each column */
+/* Each column => 280px wide, a “fitted” look */
+.swim-lanes {
+  background-color: #ebecf0;
+  border-radius: 8px;
+  width: 280px;
+  padding: 12px;
+  
+  box-shadow: 0 1px 3px rgba(9,30,66,0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 160px; /* smaller min-height */
+}
+.swim-lanes h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #172B4D;
+  margin: 0 0 4px;
+}
+
+/* 6) TASKS CONTAINER */
 .tasks-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.board {
-  flex: 1;           /* grow to fill space above the footer */
-  width: 100%;
-  background-color: #0079BF; /* Trello-like blue background */
-  padding: 24px;     /* spacing around the columns */
-  margin-bottom: 60px;
-  overflow-y: auto;  /* scroll if board is too tall */
-}
-
-/* 4) LANE WRAPPER (all columns together) */
-
-.lanes {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  flex-wrap: wrap; /* so columns wrap on smaller screens */
-}
-
-/* 5) EACH COLUMN (“swim-lanes”) */
-
-.swim-lanes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  background: #EBECF0;      /* Light gray-ish column background */
-  border-radius: 8px;
-  width: 272px;             /* Trello-like width for each column */
-  padding: 12px;
-  flex-shrink: 0;      
-
-  min-height: 200px;
-  box-shadow: 0 1px 3px rgba(9,30,66,0.25);
-}
-
-
-.heading {
-  font-size: 16px;
-  font-weight: 600;
-  color: #172B4D; /* a dark text color often used in Trello-like UIs */
-  margin-bottom: 4px;
-}
-
-/* 6) TASK CARDS */
-
-
+/* 7) TASK CARDS */
 .task {
-  background: white;
+  background: #fff;
   color: #172B4D;
   padding: 8px;
   border-radius: 6px;
   font-size: 14px;
   cursor: grab;
-
-  /* subtle box-shadow to appear like a card */
   box-shadow: 0 1px 1px rgba(9,30,66,0.25);
   transition: background-color 0.1s ease;
 }
-
-/* Hover effect for task */
 .task:hover {
   background-color: #fafafa;
 }
@@ -127,8 +121,7 @@ body {
   cursor: grabbing;
 }
 
-/* 7) FOR DRAGGING STATES (if you implement drag & drop) */
-
+/* DRAGGING STATE */
 .is-dragging {
   transform: scale(1.03);
   background: #0067A3;
@@ -137,63 +130,18 @@ body {
   opacity: 0.8;
 }
 
-/* 8) LOGIN BUTTON WIDTH */
-
-#app-login-btn {
-  width: 160px;
-}
-
-/* 9) “READY-FORM” (If you keep it) */
-
-#ready-form {
-  padding: 32px;
-}
-#ready-form input {
-  background: #EBECF0;
-  padding: 5px;
-  margin-right: 12px;
-  border-radius: 8px;
-  border-style: none;
+/* 8) “+Add card” as single <select> => .select-as-button style */
+.select-as-button {
+  background-color: #ebecf0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 4px;
   font-size: 14px;
-  outline: #0067A3;
-}
-#ready-form button {
-  padding: 3px 10px;
-  border-radius: 8px;
-  border-style: none;
-  font-weight: 300;
-  color: #5E6C84;
   cursor: pointer;
+  appearance: none; /* hide default arrow in some browsers */
+  width: 100%; 
+  box-sizing: border-box;
 }
-
-/* 10) DROPDOWNS (For moving tasks from one column to next) */
-
-.dropdown-content {
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 160px;
-  margin-top: 4px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  padding: 8px 0;
-  border-radius: 4px;
-  z-index: 5;
-
-  display: none;  /* hidden by default */
-}
-
-/* Each dropdown item style */
-.dropdown-content li {
-  list-style: none;
-  padding: 6px 12px;
-  font-size: 14px;
-  color: #172B4D;
-  cursor: pointer;
-}
-.dropdown-content li:hover {
-  background-color: #E4E4E4;
-}
-
-/* The “.show” class toggles display to block */
-.show {
-  display: block;
+.select-as-button:focus {
+  outline: 2px solid #0067A3;
 }

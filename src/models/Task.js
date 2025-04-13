@@ -20,9 +20,11 @@ export function createBacklogTask(taskTitle) {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+
+
 export function moveTaskToReady(taskId) {
   const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const index = tasks.findIndex(t => t.id === taskId);
+  const index = tasks.findIndex((t) => t.id === taskId);
   if (index !== -1) {
     tasks[index].status = "Ready";
     localStorage.setItem("tasks", JSON.stringify(tasks));
