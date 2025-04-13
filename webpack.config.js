@@ -3,52 +3,47 @@ const HTMLPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
-  entry: "./src/app.js", //собирает все приложение отсюда 
+  entry: "./src/app.js", // your entry point
   output: {
-    filename: "bundle.[chunkhash].js",  //работает без чистки кэша, вместо чанка будет подставляться уникальный хэш чтобы не обновлять страницу браузера
-    path: path.resolve(__dirname, "public"), //npm run build запустит public
+    filename: "bundle.[chunkhash].js",
+    path: path.resolve(__dirname, "public"), // note: output to /public folder
+    publicPath: "/", // ensures correct asset URLs
+  },
+  resolve: {
+    extensions: [".js", ".css", ".html", ".scss"],
+    modules: [path.resolve(__dirname, "node_modules"), "node_modules"],
   },
   devServer: {
-    port: 3000, //порт на котором стартует сервер
+    port: 3000,
     historyApiFallback: true,
   },
-  devtool: 'source-map',
+  devtool: "source-map",
   plugins: [
     new HTMLPlugin({
-      template: "./src/index.html", //делать шаблоны html
+      template: "./src/index.html",
     }),
-    new CleanWebpackPlugin(), // очищать папку build при повторном перестроении
+    new CleanWebpackPlugin(),
   ],
   module: {
-    rules: [ //как обрабатывать файлы с заданнми разрешениями - пакеты
+    rules: [
       {
         test: /\.css$/i,
         use: ["style-loader", "css-loader"],
       },
+      // (You can leave your Sass rule as-is if you ever use it.)
       {
         test: /\.s[ac]ss$/i,
-        use: [
-          // Creates `style` nodes from JS strings
-          "style-loader",
-          // Translates CSS into CommonJS
-          "css-loader",
-          // Compiles Sass to CSS
-          "sass-loader",
-        ],
+        use: ["style-loader", "css-loader", "sass-loader"],
       },
       {
         test: /\.html$/,
         use: [
           {
             loader: "html-loader",
-            options: {
-              minimize: true, //формирует в одну строку
-            },
+            options: { minimize: true },
           },
         ],
       },
     ],
   },
 };
-
-

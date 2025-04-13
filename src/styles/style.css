@@ -12,13 +12,19 @@
   display: none;
 }
 
+.container.app-main-container {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+} 
+
 /* Body takes full height, flex column for header -> main -> footer */
 
+
 body {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f4f5f7; /* A light gray to complement #0079BF board background */
+  background-color: #0079c0 !important; /* same shade as slowsleep */
+  margin: 0;
+  font-family: Arial, sans-serif;
 }
 
 /* 2) NAVBAR & FOOTER */
@@ -45,11 +51,21 @@ body {
 
 /* 3) BOARD WRAPPER */
 
+
+
+/* The tasks container inside each column */
+.tasks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .board {
   flex: 1;           /* grow to fill space above the footer */
   width: 100%;
   background-color: #0079BF; /* Trello-like blue background */
   padding: 24px;     /* spacing around the columns */
+  margin-bottom: 60px;
   overflow-y: auto;  /* scroll if board is too tall */
 }
 
@@ -57,9 +73,9 @@ body {
 
 .lanes {
   display: flex;
-  align-items: flex-start;
   gap: 24px;
-  /* we can remove height:100% since we rely on .board for overall height */
+  align-items: flex-start;
+  flex-wrap: wrap; /* so columns wrap on smaller screens */
 }
 
 /* 5) EACH COLUMN (“swim-lanes”) */
@@ -67,15 +83,18 @@ body {
 .swim-lanes {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 
   background: #EBECF0;      /* Light gray-ish column background */
   border-radius: 8px;
   width: 272px;             /* Trello-like width for each column */
-  min-height: 40px;         /* ensures some visible space even if empty */
   padding: 12px;
-  flex-shrink: 0;           /* columns won’t shrink if container is too small */
+  flex-shrink: 0;      
+
+  min-height: 200px;
+  box-shadow: 0 1px 3px rgba(9,30,66,0.25);
 }
+
 
 .heading {
   font-size: 16px;
@@ -86,13 +105,14 @@ body {
 
 /* 6) TASK CARDS */
 
+
 .task {
   background: white;
   color: #172B4D;
   padding: 8px;
   border-radius: 6px;
   font-size: 14px;
-  cursor: move;
+  cursor: grab;
 
   /* subtle box-shadow to appear like a card */
   box-shadow: 0 1px 1px rgba(9,30,66,0.25);
@@ -103,6 +123,9 @@ body {
 .task:hover {
   background-color: #fafafa;
 }
+.task:active {
+  cursor: grabbing;
+}
 
 /* 7) FOR DRAGGING STATES (if you implement drag & drop) */
 
@@ -111,6 +134,7 @@ body {
   background: #0067A3;
   color: white;
   box-shadow: 0 4px 8px rgba(9,30,66,0.25);
+  opacity: 0.8;
 }
 
 /* 8) LOGIN BUTTON WIDTH */

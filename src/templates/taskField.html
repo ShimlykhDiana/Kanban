@@ -2,7 +2,7 @@
   <!-- Four columns -->
   <div class="app-blocks-status">
     <!-- BACKLOG -->
-    <div class="block-status" id="block-backlog">
+    <div class="swim-lanes" id="backlog-lane">
       <h3>Backlog</h3>
       <button id="toggleBacklogInputBtn">+ Add card</button>
       <div id="backlogInputContainer" class="hidden">
@@ -16,21 +16,21 @@
     </div>
 
     <!-- READY -->
-    <div class="block-status" id="block-ready">
+    <div class="swim-lanes" id="ready-lane">
       <h3>Ready</h3>
       <button id="addCardReady">+ Add card</button>
       <ul id="readyDropdown" class="dropdown hidden"></ul>
     </div>
 
     <!-- IN PROGRESS -->
-    <div class="block-status" id="block-inprogress">
+    <div class="swim-lanes" id="inProgress-lane">
       <h3>In progress</h3>
       <button id="addCardInProgress">+ Add card</button>
       <ul id="inProgressDropdown" class="dropdown hidden"></ul>
     </div>
 
     <!-- FINISHED -->
-    <div class="block-status" id="block-finished">
+    <div class="swim-lanes" id="finished-lane">
       <h3>Finished</h3>
       <button id="addCardFinished">+ Add card</button>
       <ul id="finishedDropdown" class="dropdown hidden"></ul>
@@ -39,7 +39,7 @@
 </div>
 
 <footer class="footer">
-<div class="app-footer-active">Active tasks:</div>
-<div class="app-footer-finished">Finished tasks:</div>
-<div class="app-footer-credit">Kanban board by you</div>
+  <div class="app-footer-active">Active tasks:</div>
+  <div class="app-footer-finished">Finished tasks:</div>
+  <div class="app-footer-credit">Kanban board by Sh. Diana</div>
 </footer>
