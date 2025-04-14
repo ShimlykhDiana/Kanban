@@ -1,3 +1,4 @@
+// src/services/auth.js
 import { appState } from "../app";
 import { User } from "../models/User";
 

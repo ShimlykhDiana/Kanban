@@ -1,3 +1,4 @@
+// src/models/User.js
 import { BaseModel } from "./BaseModel";
 import { getFromStorage, addToStorage } from "../utils";
 
@@ -34,18 +35,4 @@ export class User extends BaseModel {
       throw new Error(e);
     }
   }
-}
-
-export function createBacklogTask(taskTitle) {
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  if (!currentUser) return;
-
-  const login = currentUser.login;
-  const tasks = loadUserTasks(login); // Instead of reading from "tasks"
-  tasks.push({
-    id: uuid(),
-    title: taskTitle,
-    status: "Backlog"
-  });
-  saveUserTasks(login, tasks);
 }

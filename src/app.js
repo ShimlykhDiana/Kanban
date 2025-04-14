@@ -1,55 +1,49 @@
-/* ================== app.js ================== */
-
-// 1) Helper to read tasks for the current user
-function loadUserTasks(login) {
-  const tasksJson = localStorage.getItem(`tasks_${login}`);
-  if (!tasksJson) return [];
-  return JSON.parse(tasksJson);
-}
-// 2) Helper to save tasks for the current user
-function saveUserTasks(login, tasks) {
-  localStorage.setItem(`tasks_${login}`, JSON.stringify(tasks));
-}
-
-// same code as before for updateFooterCounters, except it uses tasks from loadUserTasks
+/* ------------------------------------------------------------------
+   1) Helper Functions for Board & Footer
+--------------------------------------------------------------------- */
 function updateFooterCounters() {
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  if (!currentUser) return;
-  const tasks = loadUserTasks(currentUser.login);
-
-  // let activeCount = tasks.filter(t => t.status !== "Finished").length;
-  // or strictly backlog
+  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  // For "Active tasks": if you want strictly Backlog, uncomment next line.
+  // const activeCount = tasks.filter(t => t.status === "Backlog").length;
   const activeCount = tasks.filter(t => t.status !== "Finished").length;
   const finishedCount = tasks.filter(t => t.status === "Finished").length;
 
   const activeEl = document.querySelector(".app-footer-active");
   const finishedEl = document.querySelector(".app-footer-finished");
+
   if (activeEl) activeEl.textContent = `Active tasks: ${activeCount}`;
   if (finishedEl) finishedEl.textContent = `Finished tasks: ${finishedCount}`;
 }
 
+/**
+ * deleteTask(taskId)
+ * Removes the specified task from localStorage, then calls renderBoard().
+ */
 function deleteTask(taskId) {
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  if (!currentUser) return;
-  let tasks = loadUserTasks(currentUser.login);
-
-  tasks = tasks.filter(t => t.id !== taskId);
-  saveUserTasks(currentUser.login, tasks);
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  tasks = tasks.filter((t) => t.id !== taskId);
+  localStorage.setItem("tasks", JSON.stringify(tasks));
   renderBoard();
 }
 
+/**
+ * renderBoard()
+ * Reads tasks from localStorage, places them in the correct lane,
+ * creates task elements with a small delete "×" button,
+ * sets up drag/drop, updates counters, and refreshes "Add card" button states.
+ */
 function renderBoard() {
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  if (!currentUser) return;
-
-  const login = currentUser.login;
-  const tasks = loadUserTasks(login);
+  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
   const backlogLane = document.getElementById("backlog-lane");
   const readyLane = document.getElementById("ready-lane");
   const inProgressLane = document.getElementById("inProgress-lane");
   const finishedLane = document.getElementById("finished-lane");
-  if (!backlogLane || !readyLane || !inProgressLane || !finishedLane) return;
+
+  if (!backlogLane || !readyLane || !inProgressLane || !finishedLane) {
+    console.error("Some lane elements not found. Check your HTML IDs.");
+    return;
+  }
 
   function getTasksContainer(laneEl) {
     let container = laneEl.querySelector(".tasks-container");
@@ -64,22 +58,23 @@ function renderBoard() {
     return container;
   }
 
-  const backlogContainer = getTasksContainer(backlogLane);
-  const readyContainer = getTasksContainer(readyLane);
+  const backlogContainer    = getTasksContainer(backlogLane);
+  const readyContainer      = getTasksContainer(readyLane);
   const inProgressContainer = getTasksContainer(inProgressLane);
-  const finishedContainer = getTasksContainer(finishedLane);
+  const finishedContainer   = getTasksContainer(finishedLane);
 
   tasks.forEach(task => {
     const taskEl = document.createElement("div");
     taskEl.className = "task";
     taskEl.textContent = task.title;
     taskEl.draggable = true;
-    // optional italic example styling
+
     if (task.example) {
       taskEl.style.color = "#666";
       taskEl.style.fontStyle = "italic";
     }
 
+    // Add a small delete button "×"
     const deleteBtn = document.createElement("span");
     deleteBtn.textContent = "×";
     deleteBtn.style.marginLeft = "8px";
@@ -113,9 +108,12 @@ function renderBoard() {
 
   setupDragAndDropListeners();
   updateFooterCounters();
-  updateAddCardButtons(); 
+  updateAddCardButtons();
 }
 
+/**
+ * setupDragAndDropListeners(): Enables drag events on lanes.
+ */
 function setupDragAndDropListeners() {
   const lanes = document.querySelectorAll(".swim-lanes");
   lanes.forEach(lane => {
@@ -144,32 +142,33 @@ function setupDragAndDropListeners() {
   });
 }
 
+/**
+ * moveTaskToStatus(taskId, newStatus): Updates a task’s status in localStorage.
+ */
 function moveTaskToStatus(taskId, newStatus) {
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  if (!currentUser) return;
-  const login = currentUser.login;
-  const tasks = loadUserTasks(login);
-
+  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
   const index = tasks.findIndex(t => t.id === taskId);
   if (index !== -1) {
     tasks[index].status = newStatus;
-    saveUserTasks(login, tasks);
+    localStorage.setItem("tasks", JSON.stringify(tasks));
   }
 }
 
+/**
+ * removeExampleTasks(): Filters out tasks with example:true.
+ */
 function removeExampleTasks() {
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  if (!currentUser) return;
-  const login = currentUser.login;
-  let tasks = loadUserTasks(login);
-  tasks = tasks.filter(t => !t.example);
-  saveUserTasks(login, tasks);
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  tasks = tasks.filter((t) => !t.example);
+  localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-/**
- * Setup backlog: "Click +Add card => show input => Submit"
- * We'll createBacklogTask() by storing tasks in tasks_<login>.
- */
+/* ------------------------------------------------------------------
+   2) Setup Backlog Column:
+   "Click + Add card" shows an inline input field and changes button text to "Submit".
+   Submission is triggered only by Enter key or button click.
+   (The blur event is removed to avoid duplicates.)
+--------------------------------------------------------------------- */
 function setupBacklogColumnListeners() {
   const backlogAddButton = document.getElementById("backlogAddButton");
   const backlogLane = document.getElementById("backlog-lane");
@@ -208,24 +207,14 @@ function setupBacklogColumnListeners() {
     if (!isAdding || !inputEl) return;
     const title = inputEl.value.trim();
     if (title) {
-      const currentUser = JSON.parse(localStorage.getItem("user"));
-      if (currentUser) {
-        // load tasks, check duplicate, push new, save
-        const login = currentUser.login;
-        let tasks = loadUserTasks(login);
-        const duplicate = tasks.some(t => t.title === title && t.status === "Backlog");
-        if (!duplicate) {
-          // create the backlog task
-          tasks.push({
-            id: uuid(),  // or import {v4 as uuid} from "uuid"
-            title,
-            status: "Backlog"
-          });
-          saveUserTasks(login, tasks);
-          removeExampleTasks(); // remove seeded example tasks
-          renderBoard();
-        }
+      // Check for duplicates: if a Backlog task with the same title exists, don’t add it.
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      const duplicate = tasks.some(t => t.title === title && t.status === "Backlog");
+      if (!duplicate) {
+        createBacklogTask(title);
+        removeExampleTasks();
       }
+      renderBoard();
     }
     inputEl.remove();
     backlogAddButton.textContent = "+ Add card";
@@ -233,21 +222,158 @@ function setupBacklogColumnListeners() {
   }
 }
 
-// user menu, admin manage, etc. same as before
+/* ------------------------------------------------------------------
+   3) Insert User Menu (Burger + Avatar)
+   This replaces the login form area with a menu that shows:
+   - Burger icon + avatar
+   - On click, shows a dropdown with "Hello, username", "My account", "My tasks",
+     "Manage users" (if admin), and "Log out".
+--------------------------------------------------------------------- */
 function insertUserMenu(username, role) {
-  // ...
-}
-function showManageUsersUI() {
-  // ...
-}
-function deleteUser(login) {
-  // ...
-}
-function addNewUser(login, password, role) {
-  // ...
+  const navRight = document.getElementById("nav-right");
+  if (!navRight) return;
+
+  navRight.innerHTML = `
+    <div class="user-menu" id="userMenu">
+      <div class="user-menu-burger" id="userMenuBurger">
+        <div class="burger-line"></div>
+        <div class="burger-line"></div>
+        <div class="burger-line"></div>
+      </div>
+      <div class="user-menu-avatar"></div>
+    </div>
+    <ul class="user-dropdown" id="userDropdown">
+      <li class="user-menu-username">Hello, ${username}</li>
+      <li>My account</li>
+      <li>My tasks</li>
+      ${role === "admin" ? `<li id="manageUsersOption">Manage users</li>` : ""}
+      <li id="logoutOption">Log out</li>
+    </ul>
+  `;
+
+  const userMenu = document.getElementById("userMenu");
+  const userDropdown = document.getElementById("userDropdown");
+  const logoutOption = document.getElementById("logoutOption");
+  const manageUsersOption = document.getElementById("manageUsersOption");
+
+  let menuOpen = false;
+  userMenu.addEventListener("click", () => {
+    menuOpen = !menuOpen;
+    if (menuOpen) {
+      userDropdown.classList.add("show");
+    } else {
+      userDropdown.classList.remove("show");
+    }
+  });
+
+  if (logoutOption) {
+    logoutOption.addEventListener("click", () => {
+      localStorage.removeItem("user");
+      location.reload();
+    });
+  }
+
+  if (manageUsersOption) {
+    manageUsersOption.addEventListener("click", () => {
+      userDropdown.classList.remove("show");
+      showManageUsersUI();
+    });
+  }
 }
 
-// The rest of your login vs board logic
+/* ------------------------------------------------------------------
+   4) Admin: Manage Users UI – for adding/deleting users (only if admin)
+--------------------------------------------------------------------- */
+function showManageUsersUI() {
+  const appContent = document.getElementById("app-content");
+  if (!appContent) return;
+
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  let html = `
+    <h2>Manage Users (Admin Only)</h2>
+    <div id="usersList">
+      <ul>
+        ${users.map(u => `
+          <li>
+            ${u.login} [role: ${u.role}] 
+            <button class="deleteUserBtn" data-login="${u.login}">Delete</button>
+          </li>`).join("")}
+      </ul>
+    </div>
+    <hr />
+    <div id="addUserForm">
+      <h3>Add a new user</h3>
+      <input type="text" id="newUserLogin" placeholder="login" />
+      <input type="text" id="newUserPassword" placeholder="password" />
+      <select id="newUserRole">
+        <option value="user">user</option>
+        <option value="admin">admin</option>
+      </select>
+      <button id="createUserBtn">Create User</button>
+    </div>
+    <hr />
+    <button id="backToBoardBtn">Back to Board</button>
+  `;
+  appContent.innerHTML = html;
+
+  const deleteBtns = document.querySelectorAll(".deleteUserBtn");
+  deleteBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const loginToDelete = btn.dataset.login;
+      deleteUser(loginToDelete);
+    });
+  });
+
+  const createUserBtn = document.getElementById("createUserBtn");
+  if (createUserBtn) {
+    createUserBtn.addEventListener("click", () => {
+      const login = document.getElementById("newUserLogin").value.trim();
+      const password = document.getElementById("newUserPassword").value.trim();
+      const role = document.getElementById("newUserRole").value;
+      if (login && password) {
+        addNewUser(login, password, role);
+      }
+    });
+  }
+
+  const backToBoardBtn = document.getElementById("backToBoardBtn");
+  backToBoardBtn.addEventListener("click", () => {
+    appContent.innerHTML = taskFieldTemplate;
+    renderBoard();
+    setupBacklogColumnListeners();
+    setupReadyColumnListeners();
+    setupInProgressColumnListeners();
+    setupFinishedColumnListeners();
+  });
+}
+
+function deleteUser(login) {
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+  users = users.filter(u => u.login !== login);
+  localStorage.setItem("users", JSON.stringify(users));
+  showManageUsersUI();
+}
+
+function addNewUser(login, password, role) {
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+  const existing = users.find(u => u.login === login);
+  if (existing) {
+    alert("User with that login already exists!");
+    return;
+  }
+  users.push({ 
+    id: "user-" + Date.now(), 
+    login, 
+    password, 
+    role 
+  });
+  localStorage.setItem("users", JSON.stringify(users));
+  showManageUsersUI();
+}
+
+/* ------------------------------------------------------------------
+   5) Final Code: Login vs. Board Setup
+--------------------------------------------------------------------- */
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import "./styles/style.css";
@@ -258,8 +384,7 @@ import noAccessTemplate from "./templates/noAccess.html";
 import { User } from "./models/User";
 import { State } from "./state";
 import { authUser } from "./services/auth";
-// we do not rely on "createBacklogTask" from Task.js anymore, or we can adapt it
-import { v4 as uuid } from "uuid"; // for generating IDs
+import { createBacklogTask } from "./models/Task.js";
 import {
   setupReadyColumnListeners,
   setupInProgressColumnListeners,
@@ -268,9 +393,10 @@ import {
 } from "./models/dropdown.js";
 
 export const appState = new State();
-generateTestUser(User); // Possibly seeds a "test" user, but no localStorage.clear()
+generateTestUser(User);
 
-// optional: also ensure we have an admin
+// Ensure admin user exists in storage (update generateTestUser in utils.js for admin support)
+// For testing, if you want to seed an admin, do:
 (function ensureAdminUser() {
   const users = JSON.parse(localStorage.getItem("users")) || [];
   const adminExists = users.some(u => u.login === "admin");
@@ -285,13 +411,20 @@ generateTestUser(User); // Possibly seeds a "test" user, but no localStorage.cle
   }
 })();
 
-const storedTasks = JSON.parse(localStorage.getItem("tasks_default") || "[]");
+// Seed example tasks if none exist
+const storedTasks = getFromStorage("tasks");
 if (storedTasks.length === 0) {
-  // if you want a "default" for brand-new user or a "shared" default
-  // but if each user has their own tasks, you might skip this
+  const defaultTasks = [
+    { id: "abc123", title: "Buy groceries", status: "Backlog", example: true },
+    { id: "xyz789", title: "Read 100 pages", status: "Ready", example: true },
+    { id: "lmn456", title: "Wash the dishes", status: "Finished", example: true },
+  ];
+  localStorage.setItem("tasks", JSON.stringify(defaultTasks));
 }
 
+// Check if a user is in localStorage
 const existingUser = getFromStorage("user");
+
 if (existingUser && existingUser.login) {
   insertUserMenu(existingUser.login, existingUser.role || "user");
   document.querySelector("#app-content").innerHTML = taskFieldTemplate;
@@ -309,11 +442,8 @@ if (existingUser && existingUser.login) {
     const password = formData.get("password");
 
     if (authUser(login, password)) {
-      localStorage.setItem("user", JSON.stringify({
-        login, 
-        role: (login === "admin") ? "admin" : "user"
-      }));
-      insertUserMenu(login, (login === "admin") ? "admin" : "user");
+      localStorage.setItem("user", JSON.stringify({ login, role: login === "admin" ? "admin" : "user" }));
+      insertUserMenu(login, login === "admin" ? "admin" : "user");
       document.querySelector("#app-content").innerHTML = taskFieldTemplate;
       renderBoard();
       setupBacklogColumnListeners();
@@ -326,6 +456,7 @@ if (existingUser && existingUser.login) {
   });
 }
 
+// Optional: block normal <a> navigation
 document.querySelectorAll("a[href]").forEach(link => {
   link.addEventListener("click", (e) => e.preventDefault());
 });

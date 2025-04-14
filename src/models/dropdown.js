@@ -14,7 +14,7 @@ export function setupReadyColumnListeners() {
       readyDropdown.classList.remove("show");
       return;
     }
-    populateReadyDropdown(); // now correctly implemented
+    populateReadyDropdown();
     readyDropdown.classList.add("show");
   });
 
@@ -35,7 +35,6 @@ function populateReadyDropdown() {
   const readyDropdown = document.getElementById("readyDropdown");
   readyDropdown.innerHTML = "";
 
-  // Ensure unique tasks only, clearly append each task once
   backlogTasks.forEach(task => {
     const li = document.createElement("li");
     li.textContent = task.title;
