@@ -30,11 +30,12 @@ export const addToStorage = function (obj, key) {
 export const updateStorage = function (obj, key) {
   localStorage.setItem(key, JSON.stringify(obj));
 };
-/**
- * Clears localStorage, then creates a test user (login = "test", pwd = "qwerty123")
- */
+
 export const generateTestUser = function(User) {
-  localStorage.clear();
-  const testUser = new User("test", "qwerty123");
+ // localStorage.clear();
+  const testUser = new User("test", "qwerty123", "user");
+  const adminUser = new User("admin", "admin", "admin");
   User.save(testUser);
+  User.save(adminUser);
 };
+

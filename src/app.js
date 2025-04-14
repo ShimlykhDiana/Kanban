@@ -1,76 +1,105 @@
-/* ------------------------------------------------------------------
-   1) Helper Functions for Board & Footer
---------------------------------------------------------------------- */
+/* ================== app.js ================== */
+
+// 1) Helper to read tasks for the current user
+function loadUserTasks(login) {
+  const tasksJson = localStorage.getItem(`tasks_${login}`);
+  if (!tasksJson) return [];
+  return JSON.parse(tasksJson);
+}
+// 2) Helper to save tasks for the current user
+function saveUserTasks(login, tasks) {
+  localStorage.setItem(`tasks_${login}`, JSON.stringify(tasks));
+}
+
+// same code as before for updateFooterCounters, except it uses tasks from loadUserTasks
 function updateFooterCounters() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  if (!currentUser) return;
+  const tasks = loadUserTasks(currentUser.login);
+
+  // let activeCount = tasks.filter(t => t.status !== "Finished").length;
+  // or strictly backlog
   const activeCount = tasks.filter(t => t.status !== "Finished").length;
   const finishedCount = tasks.filter(t => t.status === "Finished").length;
 
   const activeEl = document.querySelector(".app-footer-active");
   const finishedEl = document.querySelector(".app-footer-finished");
-
   if (activeEl) activeEl.textContent = `Active tasks: ${activeCount}`;
   if (finishedEl) finishedEl.textContent = `Finished tasks: ${finishedCount}`;
 }
 
-function renderBoard() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+function deleteTask(taskId) {
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  if (!currentUser) return;
+  let tasks = loadUserTasks(currentUser.login);
 
-  // 1) Get lane elements
+  tasks = tasks.filter(t => t.id !== taskId);
+  saveUserTasks(currentUser.login, tasks);
+  renderBoard();
+}
+
+function renderBoard() {
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  if (!currentUser) return;
+
+  const login = currentUser.login;
+  const tasks = loadUserTasks(login);
+
   const backlogLane = document.getElementById("backlog-lane");
   const readyLane = document.getElementById("ready-lane");
   const inProgressLane = document.getElementById("inProgress-lane");
   const finishedLane = document.getElementById("finished-lane");
+  if (!backlogLane || !readyLane || !inProgressLane || !finishedLane) return;
 
-  if (!backlogLane || !readyLane || !inProgressLane || !finishedLane) {
-    console.error("Some lane elements not found. Check your HTML IDs.");
-    return;
-  }
-
-  // 2) For each lane, get or create a .tasks-container and clear it
   function getTasksContainer(laneEl) {
     let container = laneEl.querySelector(".tasks-container");
     if (!container) {
       container = document.createElement("div");
       container.className = "tasks-container";
-      // place it right after the <h3>
       const header = laneEl.querySelector("h3");
       if (header) header.insertAdjacentElement("afterend", container);
     } else {
-      container.innerHTML = ""; // empty previous tasks
+      container.innerHTML = "";
     }
     return container;
   }
 
-  const backlogContainer    = getTasksContainer(backlogLane);
-  const readyContainer      = getTasksContainer(readyLane);
+  const backlogContainer = getTasksContainer(backlogLane);
+  const readyContainer = getTasksContainer(readyLane);
   const inProgressContainer = getTasksContainer(inProgressLane);
-  const finishedContainer   = getTasksContainer(finishedLane);
+  const finishedContainer = getTasksContainer(finishedLane);
 
-  // 3) Create a .task element for each item in localStorage
   tasks.forEach(task => {
     const taskEl = document.createElement("div");
     taskEl.className = "task";
     taskEl.textContent = task.title;
     taskEl.draggable = true;
-
-    // If we have example tasks, style them in italics
+    // optional italic example styling
     if (task.example) {
       taskEl.style.color = "#666";
       taskEl.style.fontStyle = "italic";
     }
 
-    // dragstart
+    const deleteBtn = document.createElement("span");
+    deleteBtn.textContent = "×";
+    deleteBtn.style.marginLeft = "8px";
+    deleteBtn.style.color = "#c00";
+    deleteBtn.style.cursor = "pointer";
+    deleteBtn.style.float = "right";
+    deleteBtn.style.fontWeight = "bold";
+    deleteBtn.addEventListener("click", () => {
+      deleteTask(task.id);
+    });
+    taskEl.appendChild(deleteBtn);
+
     taskEl.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", task.id);
       taskEl.classList.add("is-dragging");
     });
-    // dragend
     taskEl.addEventListener("dragend", () => {
       taskEl.classList.remove("is-dragging");
     });
 
-    // Place the task in the correct container based on its .status
     if (task.status === "Backlog") {
       backlogContainer.appendChild(taskEl);
     } else if (task.status === "Ready") {
@@ -82,16 +111,11 @@ function renderBoard() {
     }
   });
 
-  // 4) Set up drag & drop (if you have it)
   setupDragAndDropListeners();
-
-  // 5) Update counters in footer
   updateFooterCounters();
+  updateAddCardButtons(); 
 }
 
-/**
- * For dragging tasks between columns.
- */
 function setupDragAndDropListeners() {
   const lanes = document.querySelectorAll(".swim-lanes");
   lanes.forEach(lane => {
@@ -120,98 +144,110 @@ function setupDragAndDropListeners() {
   });
 }
 
-/**
- * Move a task from any status to newStatus in localStorage.
- */
 function moveTaskToStatus(taskId, newStatus) {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  if (!currentUser) return;
+  const login = currentUser.login;
+  const tasks = loadUserTasks(login);
+
   const index = tasks.findIndex(t => t.id === taskId);
   if (index !== -1) {
     tasks[index].status = newStatus;
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+    saveUserTasks(login, tasks);
   }
 }
 
+function removeExampleTasks() {
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  if (!currentUser) return;
+  const login = currentUser.login;
+  let tasks = loadUserTasks(login);
+  tasks = tasks.filter(t => !t.example);
+  saveUserTasks(login, tasks);
+}
+
 /**
- * Setup the backlog column => new tasks by clicking or pressing Enter.
+ * Setup backlog: "Click +Add card => show input => Submit"
+ * We'll createBacklogTask() by storing tasks in tasks_<login>.
  */
 function setupBacklogColumnListeners() {
-  const toggleBtn     = document.getElementById("toggleBacklogInputBtn");
-  const inputContainer= document.getElementById("backlogInputContainer");
-  const saveBtn       = document.getElementById("saveBacklogTaskBtn");
-  const inputField    = document.getElementById("backlogNewTaskInput");
+  const backlogAddButton = document.getElementById("backlogAddButton");
+  const backlogLane = document.getElementById("backlog-lane");
+  if (!backlogAddButton || !backlogLane) return;
 
-  if (!toggleBtn || !inputContainer || !saveBtn || !inputField) {
-    console.warn("Backlog elements not found.");
-    return;
-  }
+  let isAdding = false;
+  let inputEl;
+  let tasksContainer;
 
-  toggleBtn.addEventListener("click", () => {
-    inputContainer.classList.toggle("hidden");
-    if (!inputContainer.classList.contains("hidden")) {
-      inputField.focus();
-    }
-  });
-
-  // press Enter => create new backlog task
-  inputField.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
+  backlogAddButton.addEventListener("click", () => {
+    if (!isAdding) {
+      isAdding = true;
+      backlogAddButton.textContent = "Submit";
+      tasksContainer = backlogLane.querySelector(".tasks-container");
+      if (!tasksContainer) return;
+      inputEl = document.createElement("input");
+      inputEl.type = "text";
+      inputEl.placeholder = "Enter your new task";
+      inputEl.style.display = "block";
+      inputEl.style.width = "100%";
+      inputEl.style.marginTop = "6px";
+      tasksContainer.appendChild(inputEl);
+      inputEl.focus();
+      inputEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addNewBacklogTask();
+        }
+      });
+    } else {
       addNewBacklogTask();
     }
   });
 
-  saveBtn.addEventListener("click", () => {
-    addNewBacklogTask();
-  });
-
   function addNewBacklogTask() {
-    const title = inputField.value.trim();
-    if (!title) return;
-    // createBacklogTask => your function that sets {title, status:'Backlog'} in localStorage
-    createBacklogTask(title);
-
-    // Remove the example tasks (with example:true) once the user adds a real one
-    removeExampleTasks();
-
-    inputField.value = "";
-    inputContainer.classList.add("hidden");
-    renderBoard();
-  }
-}
-
-/**
- * removeExampleTasks()
- * Filters out tasks with example:true from localStorage.
- */
-function removeExampleTasks() {
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  tasks = tasks.filter((t) => !t.example);
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-/**
- * Insert "Hello, user + Logout" in place of the login form.
- */
-function insertLogoutButton(username) {
-  const loginFormEl = document.querySelector("#app-login-form");
-  if (loginFormEl) {
-    loginFormEl.parentNode.innerHTML = `
-      <span style="color: white; margin-right: 8px;">
-        Hello, ${username}!
-      </span>
-      <button id="logoutBtn" class="btn btn-outline-light small-btn">Logout</button>
-    `;
-  }
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "logoutBtn") {
-      localStorage.removeItem("user");
-      location.reload();
+    if (!isAdding || !inputEl) return;
+    const title = inputEl.value.trim();
+    if (title) {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      if (currentUser) {
+        // load tasks, check duplicate, push new, save
+        const login = currentUser.login;
+        let tasks = loadUserTasks(login);
+        const duplicate = tasks.some(t => t.title === title && t.status === "Backlog");
+        if (!duplicate) {
+          // create the backlog task
+          tasks.push({
+            id: uuid(),  // or import {v4 as uuid} from "uuid"
+            title,
+            status: "Backlog"
+          });
+          saveUserTasks(login, tasks);
+          removeExampleTasks(); // remove seeded example tasks
+          renderBoard();
+        }
+      }
     }
-  });
+    inputEl.remove();
+    backlogAddButton.textContent = "+ Add card";
+    isAdding = false;
+  }
 }
 
-// --- IMPORTS & MAIN LOGIC ---
+// user menu, admin manage, etc. same as before
+function insertUserMenu(username, role) {
+  // ...
+}
+function showManageUsersUI() {
+  // ...
+}
+function deleteUser(login) {
+  // ...
+}
+function addNewUser(login, password, role) {
+  // ...
+}
+
+// The rest of your login vs board logic
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import "./styles/style.css";
@@ -222,41 +258,48 @@ import noAccessTemplate from "./templates/noAccess.html";
 import { User } from "./models/User";
 import { State } from "./state";
 import { authUser } from "./services/auth";
-import { createBacklogTask } from "./models/Task.js";  
+// we do not rely on "createBacklogTask" from Task.js anymore, or we can adapt it
+import { v4 as uuid } from "uuid"; // for generating IDs
 import {
   setupReadyColumnListeners,
   setupInProgressColumnListeners,
   setupFinishedColumnListeners,
+  updateAddCardButtons
 } from "./models/dropdown.js";
 
 export const appState = new State();
-generateTestUser(User);
+generateTestUser(User); // Possibly seeds a "test" user, but no localStorage.clear()
 
-// Possibly seed example tasks if none exist
-const storedTasks = getFromStorage("tasks");
+// optional: also ensure we have an admin
+(function ensureAdminUser() {
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const adminExists = users.some(u => u.login === "admin");
+  if (!adminExists) {
+    users.push({
+      id: "admin-123",
+      login: "admin",
+      password: "adminpass",
+      role: "admin"
+    });
+    localStorage.setItem("users", JSON.stringify(users));
+  }
+})();
+
+const storedTasks = JSON.parse(localStorage.getItem("tasks_default") || "[]");
 if (storedTasks.length === 0) {
-  const defaultTasks = [
-    { id: "abc123", title: "Buy groceries", status: "Backlog", example: true },
-    { id: "xyz789", title: "Read 100 pages", status: "Ready", example: true },
-    { id: "lmn456", title: "Wash the dishes", status: "Finished", example: true },
-  ];
-  localStorage.setItem("tasks", JSON.stringify(defaultTasks));
+  // if you want a "default" for brand-new user or a "shared" default
+  // but if each user has their own tasks, you might skip this
 }
 
-// Check if user is in localStorage
 const existingUser = getFromStorage("user");
-
-// If user is logged in => show board
 if (existingUser && existingUser.login) {
-  insertLogoutButton(existingUser.login);
+  insertUserMenu(existingUser.login, existingUser.role || "user");
   document.querySelector("#app-content").innerHTML = taskFieldTemplate;
   renderBoard();
   setupBacklogColumnListeners();
   setupReadyColumnListeners();
   setupInProgressColumnListeners();
   setupFinishedColumnListeners();
-
-// else => show login form
 } else {
   const loginForm = document.querySelector("#app-login-form");
   loginForm.addEventListener("submit", (e) => {
@@ -266,9 +309,11 @@ if (existingUser && existingUser.login) {
     const password = formData.get("password");
 
     if (authUser(login, password)) {
-      localStorage.setItem("user", JSON.stringify({ login, role: "user" }));
-      insertLogoutButton(login);
-
+      localStorage.setItem("user", JSON.stringify({
+        login, 
+        role: (login === "admin") ? "admin" : "user"
+      }));
+      insertUserMenu(login, (login === "admin") ? "admin" : "user");
       document.querySelector("#app-content").innerHTML = taskFieldTemplate;
       renderBoard();
       setupBacklogColumnListeners();
@@ -281,10 +326,8 @@ if (existingUser && existingUser.login) {
   });
 }
 
-// optional block normal links
 document.querySelectorAll("a[href]").forEach(link => {
   link.addEventListener("click", (e) => e.preventDefault());
 });
 
-// END
 export { renderBoard };

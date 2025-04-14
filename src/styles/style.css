@@ -56,10 +56,10 @@ body {
 
 /* 4) MAKE LOGIN FORM SMALLER */
 .small-input {
-  width: 90px;       /* narrower input fields */
+  width: 90px; /* narrower input fields */
   font-size: 14px;
-  margin-right: 4px; /* slight spacing between fields */
-  padding: 2px 6px;  /* less padding for smaller look */
+  margin-right: 4px; 
+  padding: 2px 6px;
 }
 .small-btn {
   font-size: 14px;
@@ -82,12 +82,11 @@ body {
   border-radius: 8px;
   width: 280px;
   padding: 12px;
-  
   box-shadow: 0 1px 3px rgba(9,30,66,0.25);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 160px; /* smaller min-height */
+  min-height: 160px;
 }
 .swim-lanes h3 {
   font-size: 15px;
@@ -113,6 +112,7 @@ body {
   cursor: grab;
   box-shadow: 0 1px 1px rgba(9,30,66,0.25);
   transition: background-color 0.1s ease;
+  position: relative;
 }
 .task:hover {
   background-color: #fafafa;
@@ -130,18 +130,126 @@ body {
   opacity: 0.8;
 }
 
-/* 8) “+Add card” as single <select> => .select-as-button style */
-.select-as-button {
+/* 8) “+Add card” button in columns => real <button> */
+.add-card-btn {
   background-color: #ebecf0;
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 4px;
   font-size: 14px;
   cursor: pointer;
-  appearance: none; /* hide default arrow in some browsers */
   width: 100%; 
+  text-align: left;
   box-sizing: border-box;
+  color: #172B4D;
+  transition: background-color 0.1s ease;
 }
-.select-as-button:focus {
-  outline: 2px solid #0067A3;
+.add-card-btn:hover:not(:disabled) {
+  background-color: #d8d8d8;
+}
+.add-card-btn:disabled {
+  background-color: #e2e2e2;
+  color: #aaa;
+  cursor: default;
+}
+
+/* The real <ul> for tasks */
+.task-dropdown {
+  list-style: none;
+  margin: 4px 0 0 0;
+  padding: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease; 
+}
+.task-dropdown.show {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.task-dropdown li {
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+.task-dropdown li:hover {
+  background-color: #f0f0f0;
+}
+
+/* 9) USER MENU => burger + avatar, display "Hello, username" inside the dropdown (or as part of the menu) */
+.user-menu {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  color: #fff;
+  margin-left: 16px;
+}
+
+.user-menu-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ccc;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.user-menu-burger {
+  display: inline-block;
+  vertical-align: middle;
+  width: 18px;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.burger-line {
+  width: 100%;
+  height: 2px;
+  background-color: #fff;
+  margin: 3px 0;
+}
+
+/* The user dropdown */
+.user-dropdown {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  min-width: 150px;
+  padding: 6px 0;
+  display: none;
+  z-index: 10;
+}
+
+.user-dropdown.show {
+  display: block;
+}
+
+.user-dropdown li {
+  list-style: none;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.user-dropdown li:hover {
+  background-color: #eee;
+}
+
+.user-dropdown li.disabled {
+  color: #aaa;
+  pointer-events: none;
+}
+
+/* .user-menu-username => to show "Hello, user" inside the menu if we want */
+.user-menu-username {
+  padding: 6px 12px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
 }
