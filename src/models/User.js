@@ -1,4 +1,3 @@
-// src/models/User.js
 import { BaseModel } from "./BaseModel";
 import { getFromStorage, addToStorage } from "../utils";
 
@@ -28,7 +27,6 @@ export class User extends BaseModel {
 
   static save(user) {
     try {
-      // adds user to 'users' array in localStorage
       addToStorage(user, user.storageKey);
       return true;
     } catch (e) {

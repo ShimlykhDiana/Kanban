@@ -1,6 +1,9 @@
-import { moveTaskToReady, moveTaskToInProgress, moveTaskToFinished } from "./Task.js";
-import { renderBoard } from "../app.js";
-
+import { loadTasks} from "../storage.js";
+import { currentLogin }         from "../session.js";
+import { moveTaskToReady,
+         moveTaskToInProgress,
+         moveTaskToFinished } from "./Task.js";
+import { renderBoard } from "../app.js"; 
 /** 
  * For Ready => gather tasks from Backlog, show them in <ul> on button click
  */
@@ -29,7 +32,7 @@ export function setupReadyColumnListeners() {
 }
 
 function populateReadyDropdown() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const tasks = loadTasks(currentLogin());
   const backlogTasks = tasks.filter(t => t.status === "Backlog");
 
   const readyDropdown = document.getElementById("readyDropdown");
@@ -72,7 +75,7 @@ export function setupInProgressColumnListeners() {
 }
 
 function populateInProgressDropdown() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const tasks = loadTasks(currentLogin());
   const readyTasks = tasks.filter(t => t.status === "Ready");
 
   const inProgressDropdown = document.getElementById("inProgressDropdown");
@@ -115,7 +118,7 @@ export function setupFinishedColumnListeners() {
 }
 
 function populateFinishedDropdown() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const tasks = loadTasks(currentLogin());
   const inProgressTasks = tasks.filter(t => t.status === "In progress");
 
   const finishedDropdown = document.getElementById("finishedDropdown");
@@ -133,19 +136,19 @@ function populateFinishedDropdown() {
  * Enable or disable the "Add card" buttons in Ready, InProgress, Finished.
  */
 export function updateAddCardButtons() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const tasks = loadTasks(currentLogin());
 
   // Ready is disabled if no tasks in Backlog
   const backlogCount = tasks.filter(t => t.status === "Backlog").length;
   const addCardReadyBtn = document.getElementById("addCardReadyBtn");
   if (addCardReadyBtn) addCardReadyBtn.disabled = (backlogCount === 0);
 
-  // InProgress is disabled if no tasks in Ready
+  
   const readyCount = tasks.filter(t => t.status === "Ready").length;
   const addCardInProgressBtn = document.getElementById("addCardInProgressBtn");
   if (addCardInProgressBtn) addCardInProgressBtn.disabled = (readyCount === 0);
 
-  // Finished is disabled if no tasks in In progress
+
   const inProgressCount = tasks.filter(t => t.status === "In progress").length;
   const addCardFinishedBtn = document.getElementById("addCardFinishedBtn");
   if (addCardFinishedBtn) addCardFinishedBtn.disabled = (inProgressCount === 0);

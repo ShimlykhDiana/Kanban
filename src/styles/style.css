@@ -1,4 +1,3 @@
-/* 1) FULL-HEIGHT BODY, FLEX LAYOUT */
 html, body {
   height: 100%;
   margin: 0;
@@ -13,13 +12,13 @@ body {
   background-color: #0079c0; /* main blue background */
 }
 
-/* 2) NAVBAR & FOOTER */
+
 .bg-dark, .app-navbar {
   background-color: #0067A3 !important;
   color: #fff;
 }
 
-/* Single pinned footer (no duplicates) */
+
 .footer {
   width: 100%;
   display: flex;
@@ -41,12 +40,12 @@ body {
   font-size: 14px;
 }
 
-/* 3) MAIN CONTAINER => grows to fill leftover vertical space */
+
 .container.app-main-container {
-  flex: 1; /* expand vertically, pushing footer down */
+  flex: 1; 
   display: flex;
-  justify-content: flex-start; /* left aligned horizontally */
-  align-items: flex-start;     /* top aligned within container */
+  justify-content: flex-start; 
+  align-items: flex-start;    
   padding: 16px;
   background-color: transparent !important;
 }
@@ -54,9 +53,9 @@ body {
   width: auto;
 }
 
-/* 4) MAKE LOGIN FORM SMALLER */
+
 .small-input {
-  width: 90px; /* narrower input fields */
+  width: 90px;
   font-size: 14px;
   margin-right: 4px; 
   padding: 2px 6px;
@@ -73,10 +72,10 @@ body {
   gap: 20px;
   align-items: flex-start;
   flex-wrap: wrap;
-  margin-bottom: 24px; /* space below the board if needed */
+  margin-bottom: 24px; 
 }
 
-/* Each column => 280px wide, a “fitted” look */
+
 .swim-lanes {
   background-color: #ebecf0;
   border-radius: 8px;
@@ -95,14 +94,14 @@ body {
   margin: 0 0 4px;
 }
 
-/* 6) TASKS CONTAINER */
+
 .tasks-container {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-/* 7) TASK CARDS */
+
 .task {
   background: #fff;
   color: #172B4D;
@@ -130,7 +129,7 @@ body {
   opacity: 0.8;
 }
 
-/* 8) “+Add card” button in columns => real <button> */
+
 .add-card-btn {
   background-color: #ebecf0;
   border: 1px solid #ccc;
@@ -178,13 +177,25 @@ body {
   background-color: #f0f0f0;
 }
 
-/* 9) USER MENU => burger + avatar, display "Hello, username" inside the dropdown (or as part of the menu) */
-.user-menu {
+
+.user-menu .caret{
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  display:inline-block;
+  padding:3px;
+  margin-left:6px;
+  transform:rotate(45deg);     /* ▼ */
+  transition:transform .2s;
+}
+.user-menu .caret.open{transform:rotate(-135deg);} /* ▲ */
+
+#userCaret {
+  display: none;
+}
+
+/* visible only while it is inside .user-menu */
+.user-menu #userCaret {
   display: inline-block;
-  position: relative;
-  cursor: pointer;
-  color: #fff;
-  margin-left: 16px;
 }
 
 .user-menu-avatar {
@@ -253,3 +264,4 @@ body {
   font-weight: bold;
   border-bottom: 1px solid #eee;
 }
+

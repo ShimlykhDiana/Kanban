@@ -21,6 +21,7 @@ module.exports = {
   plugins: [
     new HTMLPlugin({
       template: "./src/index.html",
+      inject: "body",
     }),
     new CleanWebpackPlugin(),
   ],
@@ -30,7 +31,6 @@ module.exports = {
         test: /\.css$/i,
         use: ["style-loader", "css-loader"],
       },
-      // (You can leave your Sass rule as-is if you ever use it.)
       {
         test: /\.s[ac]ss$/i,
         use: ["style-loader", "css-loader", "sass-loader"],

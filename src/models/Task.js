@@ -1,47 +1,43 @@
-import { BaseModel } from "./BaseModel.js";
-import { v4 as uuid } from "uuid";
+import { BaseModel }        from "./BaseModel.js";
+import { v4 as uuid }       from "uuid";
+import { loadTasks, saveTasks } from "../storage.js";
+import { currentLogin }        from "../session.js";
+
 
 export class Task extends BaseModel {
   constructor(title, status = "Backlog") {
     super();
-    this.title = title;
+    this.title  = title;
     this.status = status;
   }
 }
 
-export function createBacklogTask(taskTitle) {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+export function createBacklogTask(title) {
+  const login = currentLogin();        // whose list
+  const tasks = loadTasks(login);      // read that list
+
   tasks.push({
-    id: uuid(),
-    title: taskTitle,
-    status: "Backlog"
+    id     : uuid(),
+    title  : title,
+    status : "Backlog",
+    owner  : login  
   });
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+
+  saveTasks(login, tasks);  
 }
 
-export function moveTaskToReady(taskId) {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const index = tasks.findIndex(t => t.id === taskId);
-  if (index !== -1) {
-    tasks[index].status = "Ready";
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }
-}
 
-export function moveTaskToInProgress(taskId) {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const index = tasks.findIndex(t => t.id === taskId);
-  if (index !== -1) {
-    tasks[index].status = "In progress";
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }
-}
+export function moveTaskToReady(id)       { move(id, "Ready");       }
+export function moveTaskToInProgress(id)  { move(id, "In progress"); }
+export function moveTaskToFinished(id)    { move(id, "Finished");    }
 
-export function moveTaskToFinished(taskId) {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const index = tasks.findIndex(t => t.id === taskId);
-  if (index !== -1) {
-    tasks[index].status = "Finished";
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+function move(taskId, newStatus) {
+  const login = currentLogin();
+  const tasks = loadTasks(login);
+
+  const idx = tasks.findIndex(t => t.id === taskId);
+  if (idx !== -1) {
+    tasks[idx].status = newStatus;
+    saveTasks(login, tasks);
   }
 }

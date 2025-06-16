@@ -1,44 +1,35 @@
-/* ------------------------------------------------------------------
-   1) Helper Functions for Board & Footer
---------------------------------------------------------------------- */
+
 function updateFooterCounters() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  // For "Active tasks": if you want strictly Backlog, uncomment next line.
-  // const activeCount = tasks.filter(t => t.status === "Backlog").length;
-  const activeCount = tasks.filter(t => t.status !== "Finished").length;
+
+  const tasks = loadTasks(currentLogin());
+
+
+  const activeCount   = tasks.filter(t => t.status !== "Finished").length;
   const finishedCount = tasks.filter(t => t.status === "Finished").length;
 
-  const activeEl = document.querySelector(".app-footer-active");
+  const activeEl   = document.querySelector(".app-footer-active");
   const finishedEl = document.querySelector(".app-footer-finished");
 
-  if (activeEl) activeEl.textContent = `Active tasks: ${activeCount}`;
+  if (activeEl)   activeEl.textContent   = `Active tasks: ${activeCount}`;
   if (finishedEl) finishedEl.textContent = `Finished tasks: ${finishedCount}`;
 }
 
-/**
- * deleteTask(taskId)
- * Removes the specified task from localStorage, then calls renderBoard().
- */
+
 function deleteTask(taskId) {
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  tasks = tasks.filter((t) => t.id !== taskId);
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+  let tasks = loadTasks(currentLogin());
+  tasks = tasks.filter(t => t.id !== taskId);
+  saveTasks(currentLogin(), tasks);
   renderBoard();
 }
 
-/**
- * renderBoard()
- * Reads tasks from localStorage, places them in the correct lane,
- * creates task elements with a small delete "×" button,
- * sets up drag/drop, updates counters, and refreshes "Add card" button states.
- */
-function renderBoard() {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-  const backlogLane = document.getElementById("backlog-lane");
-  const readyLane = document.getElementById("ready-lane");
+function renderBoard() {
+  const tasks = loadTasks(currentLogin());
+
+  const backlogLane    = document.getElementById("backlog-lane");
+  const readyLane      = document.getElementById("ready-lane");
   const inProgressLane = document.getElementById("inProgress-lane");
-  const finishedLane = document.getElementById("finished-lane");
+  const finishedLane   = document.getElementById("finished-lane");
 
   if (!backlogLane || !readyLane || !inProgressLane || !finishedLane) {
     console.error("Some lane elements not found. Check your HTML IDs.");
@@ -74,36 +65,26 @@ function renderBoard() {
       taskEl.style.fontStyle = "italic";
     }
 
-    // Add a small delete button "×"
     const deleteBtn = document.createElement("span");
-    deleteBtn.textContent = "×";
-    deleteBtn.style.marginLeft = "8px";
-    deleteBtn.style.color = "#c00";
-    deleteBtn.style.cursor = "pointer";
-    deleteBtn.style.float = "right";
-    deleteBtn.style.fontWeight = "bold";
-    deleteBtn.addEventListener("click", () => {
-      deleteTask(task.id);
-    });
+    deleteBtn.textContent   = "×";
+    deleteBtn.style.marginLeft   = "8px";
+    deleteBtn.style.color        = "#c00";
+    deleteBtn.style.cursor       = "pointer";
+    deleteBtn.style.float        = "right";
+    deleteBtn.style.fontWeight   = "bold";
+    deleteBtn.addEventListener("click", () => deleteTask(task.id));
     taskEl.appendChild(deleteBtn);
 
-    taskEl.addEventListener("dragstart", (e) => {
+    taskEl.addEventListener("dragstart", e => {
       e.dataTransfer.setData("text/plain", task.id);
       taskEl.classList.add("is-dragging");
     });
-    taskEl.addEventListener("dragend", () => {
-      taskEl.classList.remove("is-dragging");
-    });
+    taskEl.addEventListener("dragend", () => taskEl.classList.remove("is-dragging"));
 
-    if (task.status === "Backlog") {
-      backlogContainer.appendChild(taskEl);
-    } else if (task.status === "Ready") {
-      readyContainer.appendChild(taskEl);
-    } else if (task.status === "In progress") {
-      inProgressContainer.appendChild(taskEl);
-    } else if (task.status === "Finished") {
-      finishedContainer.appendChild(taskEl);
-    }
+    if      (task.status === "Backlog")      backlogContainer.appendChild(taskEl);
+    else if (task.status === "Ready")        readyContainer.appendChild(taskEl);
+    else if (task.status === "In progress")  inProgressContainer.appendChild(taskEl);
+    else if (task.status === "Finished")     finishedContainer.appendChild(taskEl);
   });
 
   setupDragAndDropListeners();
@@ -111,10 +92,8 @@ function renderBoard() {
   updateAddCardButtons();
 }
 
-/**
- * setupDragAndDropListeners(): Enables drag events on lanes.
- */
-function setupDragAndDropListeners() {
+
+function setupDragAndDropListeners() { 
   const lanes = document.querySelectorAll(".swim-lanes");
   lanes.forEach(lane => {
     lane.addEventListener("dragover", (e) => {
@@ -140,46 +119,36 @@ function setupDragAndDropListeners() {
       }
     });
   });
-}
+ }
 
-/**
- * moveTaskToStatus(taskId, newStatus): Updates a task’s status in localStorage.
- */
+
 function moveTaskToStatus(taskId, newStatus) {
-  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const index = tasks.findIndex(t => t.id === taskId);
-  if (index !== -1) {
-    tasks[index].status = newStatus;
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+  const tasks = loadTasks(currentLogin());
+  const idx   = tasks.findIndex(t => t.id === taskId);
+  if (idx !== -1) {
+    tasks[idx].status = newStatus;
+    saveTasks(currentLogin(), tasks);
   }
 }
 
-/**
- * removeExampleTasks(): Filters out tasks with example:true.
- */
+
 function removeExampleTasks() {
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  tasks = tasks.filter((t) => !t.example);
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+  // ★ 5 — per-user load / save
+  let tasks = loadTasks(currentLogin());
+  tasks = tasks.filter(t => !t.example);
+  saveTasks(currentLogin(), tasks);
 }
 
-/* ------------------------------------------------------------------
-   2) Setup Backlog Column:
-   "Click + Add card" shows an inline input field and changes button text to "Submit".
-   Submission is triggered only by Enter key or button click.
-   (The blur event is removed to avoid duplicates.)
---------------------------------------------------------------------- */
 function setupBacklogColumnListeners() {
   const backlogAddButton = document.getElementById("backlogAddButton");
-  const backlogLane = document.getElementById("backlog-lane");
+  const backlogLane      = document.getElementById("backlog-lane");
   if (!backlogAddButton || !backlogLane) return;
 
   let isAdding = false;
-  let inputEl;
-  let tasksContainer;
+  let inputEl, tasksContainer;
 
-  backlogAddButton.addEventListener("click", () => {
-    if (!isAdding) {
+  backlogAddButton.addEventListener("click", () => { 
+     if (!isAdding) {
       isAdding = true;
       backlogAddButton.textContent = "Submit";
       tasksContainer = backlogLane.querySelector(".tasks-container");
@@ -202,12 +171,10 @@ function setupBacklogColumnListeners() {
       addNewBacklogTask();
     }
   });
-
-  function addNewBacklogTask() {
+    function addNewBacklogTask() {
     if (!isAdding || !inputEl) return;
     const title = inputEl.value.trim();
     if (title) {
-      // Check for duplicates: if a Backlog task with the same title exists, don’t add it.
       const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
       const duplicate = tasks.some(t => t.title === title && t.status === "Backlog");
       if (!duplicate) {
@@ -220,70 +187,50 @@ function setupBacklogColumnListeners() {
     backlogAddButton.textContent = "+ Add card";
     isAdding = false;
   }
-}
+  }
 
-/* ------------------------------------------------------------------
-   3) Insert User Menu (Burger + Avatar)
-   This replaces the login form area with a menu that shows:
-   - Burger icon + avatar
-   - On click, shows a dropdown with "Hello, username", "My account", "My tasks",
-     "Manage users" (if admin), and "Log out".
---------------------------------------------------------------------- */
+
+
+
+
 function insertUserMenu(username, role) {
   const navRight = document.getElementById("nav-right");
   if (!navRight) return;
 
-  navRight.innerHTML = `
-    <div class="user-menu" id="userMenu">
-      <div class="user-menu-burger" id="userMenuBurger">
-        <div class="burger-line"></div>
-        <div class="burger-line"></div>
-        <div class="burger-line"></div>
-      </div>
-      <div class="user-menu-avatar"></div>
-    </div>
-    <ul class="user-dropdown" id="userDropdown">
-      <li class="user-menu-username">Hello, ${username}</li>
-      <li>My account</li>
-      <li>My tasks</li>
-      ${role === "admin" ? `<li id="manageUsersOption">Manage users</li>` : ""}
-      <li id="logoutOption">Log out</li>
-    </ul>
-  `;
-
-  const userMenu = document.getElementById("userMenu");
-  const userDropdown = document.getElementById("userDropdown");
-  const logoutOption = document.getElementById("logoutOption");
-  const manageUsersOption = document.getElementById("manageUsersOption");
-
-  let menuOpen = false;
+ navRight.innerHTML = `
+  <div class="user-menu" id="userMenu">
+    <div class="user-menu-avatar"></div>
+    <span id="userCaret" class="caret"></span>
+  </div>
+  <ul class="user-dropdown" id="userDropdown">
+    <li class="user-menu-username">Hello, ${username}</li>
+    ${role === "admin" ? `<li id="manageUsersOption">Manage users</li>` : ""}
+    <li id="logoutOption">Log out</li>
+  </ul>
+`;
+ const userMenu      = document.getElementById("userMenu");
+  const userDropdown  = document.getElementById("userDropdown");
+  const caret         = document.getElementById("userCaret");
+  const logoutOption  = document.getElementById("logoutOption");
+  const manageOption  = document.getElementById("manageUsersOption");
   userMenu.addEventListener("click", () => {
-    menuOpen = !menuOpen;
-    if (menuOpen) {
-      userDropdown.classList.add("show");
-    } else {
-      userDropdown.classList.remove("show");
-    }
+    caret.classList.toggle("open");       // ▲ / ▼
+    userDropdown.classList.toggle("show");
   });
-
-  if (logoutOption) {
-    logoutOption.addEventListener("click", () => {
-      localStorage.removeItem("user");
-      location.reload();
-    });
-  }
-
-  if (manageUsersOption) {
-    manageUsersOption.addEventListener("click", () => {
+   logoutOption.addEventListener("click", () => {
+  localStorage.removeItem("user");
+  document.getElementById("userMenu")?.remove();  
+  document.getElementById("userCaret")?.remove(); 
+  location.reload();
+});
+  if (manageOption) {
+    manageOption.addEventListener("click", () => {
       userDropdown.classList.remove("show");
       showManageUsersUI();
     });
   }
 }
 
-/* ------------------------------------------------------------------
-   4) Admin: Manage Users UI – for adding/deleting users (only if admin)
---------------------------------------------------------------------- */
 function showManageUsersUI() {
   const appContent = document.getElementById("app-content");
   if (!appContent) return;
@@ -371,20 +318,18 @@ function addNewUser(login, password, role) {
   showManageUsersUI();
 }
 
-/* ------------------------------------------------------------------
-   5) Final Code: Login vs. Board Setup
---------------------------------------------------------------------- */
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import "./styles/style.css";
 
 import { getFromStorage, generateTestUser } from "./utils.js";
-import taskFieldTemplate from "./templates/taskField.html";
-import noAccessTemplate from "./templates/noAccess.html";
-import { User } from "./models/User";
-import { State } from "./state";
-import { authUser } from "./services/auth";
-import { createBacklogTask } from "./models/Task.js";
+import taskFieldTemplate                    from "./templates/taskField.html";
+import noAccessTemplate                     from "./templates/noAccess.html";
+import { User }                             from "./models/User";
+import { State }                            from "./state";
+import { authUser }                         from "./services/auth";
+import { createBacklogTask }                from "./models/Task.js";
 import {
   setupReadyColumnListeners,
   setupInProgressColumnListeners,
@@ -392,11 +337,13 @@ import {
   updateAddCardButtons
 } from "./models/dropdown.js";
 
+
+import { loadTasks, saveTasks } from "./storage.js";
+import { currentLogin }         from "./session.js";
+
 export const appState = new State();
 generateTestUser(User);
 
-// Ensure admin user exists in storage (update generateTestUser in utils.js for admin support)
-// For testing, if you want to seed an admin, do:
 (function ensureAdminUser() {
   const users = JSON.parse(localStorage.getItem("users")) || [];
   const adminExists = users.some(u => u.login === "admin");
@@ -411,7 +358,7 @@ generateTestUser(User);
   }
 })();
 
-// Seed example tasks if none exist
+
 const storedTasks = getFromStorage("tasks");
 if (storedTasks.length === 0) {
   const defaultTasks = [
@@ -422,7 +369,7 @@ if (storedTasks.length === 0) {
   localStorage.setItem("tasks", JSON.stringify(defaultTasks));
 }
 
-// Check if a user is in localStorage
+
 const existingUser = getFromStorage("user");
 
 if (existingUser && existingUser.login) {
@@ -456,7 +403,7 @@ if (existingUser && existingUser.login) {
   });
 }
 
-// Optional: block normal <a> navigation
+
 document.querySelectorAll("a[href]").forEach(link => {
   link.addEventListener("click", (e) => e.preventDefault());
 });
